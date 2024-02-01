@@ -6,9 +6,9 @@ const SubTask = require('../models/subTask');
 const createTask = async (req, res) => {
   try {
     const { title, description, due_date } = req.body;
-    const userId = req.userId; // Assuming userId is extracted from the JWT token
+    const userId = req.userId;
 
-    // Assuming priority is determined based on the due date (as per provided logic)
+    
     const priority = calculatePriority(due_date);
 
     const task = new Task({
@@ -16,7 +16,7 @@ const createTask = async (req, res) => {
       description,
       due_date,
       priority,
-      user: userId,
+      // user: userId,
     });
 
     await task.save();
@@ -50,8 +50,7 @@ const createSubTask = async (req, res) => {
 const getUserTasks = async (req, res) => {
   try {
     const { priority, due_date, page, limit } = req.query;
-    const userId = req.userId; // Assuming userId is extracted from the JWT token
-
+    const userId = req.userId; 
     const query = { user: userId };
 
     if (priority) {
@@ -78,7 +77,7 @@ const getUserTasks = async (req, res) => {
 const getUserSubTasks = async (req, res) => {
   try {
     const { task_id } = req.params;
-    const userId = req.userId; // Assuming userId is extracted from the JWT token
+    const userId = req.userId; 
 
     const query = { task_id };
 
@@ -95,32 +94,7 @@ const getUserSubTasks = async (req, res) => {
   }
 };
 
-// 5. Update Task
-// const updateTask = async (req, res) => {
-//   try {
-//     const { task_id } = req.params;
-//     const { due_date, status } = req.body;
 
-//     console.log('Received request body:', req.body);
-//     const task = await Task.findByIdAndUpdate(
-//       task_id,
-//       { due_date, status: String(status) },
-//       { new: true }
-//     );
-
-//     if (!task) {
-//       return res.status(404).json({ message: 'Task not found' });
-//     }
-
-//     // Assuming updating subtasks based on task status
-//     await SubTask.updateMany({ task_id }, { status });
-
-//     res.status(200).json({ message: 'Task updated successfully', task });
-//   } catch (error) {
-//     console.error('Error updating task:', error);
-//     res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// };
 const updateTask = async (req, res) => {
   try {
     const { task_id } = req.params;
@@ -128,9 +102,6 @@ const updateTask = async (req, res) => {
 
     console.log('Received request body:', req.body);
 
-     
-
-    // Update the task
     const task = await Task.findByIdAndUpdate(
       task_id,
       { due_date, status },
@@ -180,18 +151,13 @@ const deleteTask = async (req, res) => {
   try {
     const { task_id } = req.params;
 
-    const task = await Task.findByIdAndUpdate(
-      task_id,
-      { deleted_at: new Date() },
-      { new: true }
-    );
+    const task = await Task.findByIdAndDelete(task_id);
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Assuming soft deletion for subtasks as well
-    await SubTask.updateMany({ task_id }, { deleted_at: new Date() });
+    await SubTask.deleteMany({ task_id });
 
     res.status(200).json({ message: 'Task deleted successfully' });
   } catch (error) {
@@ -200,15 +166,14 @@ const deleteTask = async (req, res) => {
   }
 };
 
+
 // 8. Delete SubTask (Soft Deletion)
 const deleteSubTask = async (req, res) => {
   try {
     const { subtask_id } = req.params;
 
-    // Find and delete the SubTask by its _id
     const subTask = await SubTask.findByIdAndDelete(subtask_id);
 
-    // Check if the SubTask was found and deleted
     if (!subTask) {
       return res.status(404).json({ message: 'SubTask not found' });
     }
@@ -221,25 +186,6 @@ const deleteSubTask = async (req, res) => {
 };
 
 
-
-
-
-
-// Helper function to calculate priority based on due date
-const calculatePriority = (due_date) => {
-  // Implement your logic here (as per provided priority logic)
-  // For simplicity, let's assume priority 0 for due date today, 1 for tomorrow, and 2 for later
-  const today = new Date();
-  const dueDate = new Date(due_date);
-
-  if (dueDate.toDateString() === today.toDateString()) {
-    return 0;
-  } else if (dueDate > today && dueDate < new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)) {
-    return 1;
-  } else {
-    return 2;
-  }
-};
 
 module.exports = {
   createTask,
